@@ -1,0 +1,69 @@
+name: New Main
+
+
+on:
+  workflow_dispatch:
+    
+
+jobs:
+
+  greeting:
+    name: Hello World
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+    - uses: actions/first-interaction@v1
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        issue-message: "Message that will be displayed on users' first issue"
+        pr-message: "Message that will be displayed on users' first pull request"
+
+  build:
+    name: Hello World 2
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+    - uses: actions/first-interaction@v1
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
+        issue-message: "Message that will be displayed on users' first issue"
+        pr-message: "Message that will be displayed on users' first pull request"
+
+    
+  changeApproval:
+    name: ServiceNow Change Approval
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:     
+      - name: ServiceNow Change Approval
+        uses: ServiceNow/servicenow-devops-change@v3.1.0
+        id: create
+        with:
+          devops-integration-user-name: 'devops.integration.user'
+          devops-integration-user-password: 'LoyRF_hyH3?<!2]pLadGL%u6>qw])Kd(Luom,F2F4Sj]9P4],spLL1fGhcstEs-U[&^qcXZVO8tYbz]8oKib([8!m.RJzVh}_vKb'
+          instance-url: 'https://dev224376.service-now.com'
+          tool-id: '642722e983002210050814d0deaad3ec'
+          context-github: ${{ toJSON(github) }}
+          job-name: 'ServiceNow Change Approval'
+          change-request: '{"setCloseCode":"true","attributes":{"short_description":"Automated Software Deployment","description":"Automated Software Deployment.","assignment_group":"a715cd759f2002002920bde8132e7018","implementation_plan":"Software update is tested and results can be found in Test Summaries Tab; When the change is approved the implementation happens automated by the CICD pipeline within the change planned start and end time window.","backout_plan":"When software fails in production, the previous software release will be re-deployed.","test_plan":"Testing if the software was successfully deployed"}}'
+          interval: '100'
+          timeout: '3600'
+          changeCreationTimeOut: '3600'
+          abortOnChangeCreationFailure: true
+          abortOnChangeStepTimeout: true
+      - name: Output of Change Creation
+        run: echo "change-request-number = ${{ steps.create.outputs.change-request-number }} and change-request-sys-id = ${{ steps.create.outputs.change-request-sys-id }} "
+
+  deploy:
+    name: Deploy
+    needs: changeApproval
+    runs-on: ubuntu-latest
+
+    steps:     
+      - name: Run Deployment Script
+        run: echo "Deployment Finished....."
